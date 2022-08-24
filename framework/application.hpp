@@ -3,8 +3,8 @@
 
 #include "logging.hpp"
 
-//#define GLFW_INCLUDE_NONE
-//#include <GLFW/glfw3.h>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 //#include <glm/vec4.hpp>
 
 // TODO: GL event handling
@@ -36,7 +36,18 @@ public:
 
 protected:
     application_data m_props;
-    //GLFWwindow* m_window;
+    GLFWwindow* m_window;
+    VkInstance m_vulkan_instance;
+
+private:
+    void init_window();
+    void init_vulkan();
+    void init_imgui();
+    VkResult createVulkanInstance();
+
+    void shutdown_window();
+    void shutdown_vulkan();
+    void shutdown_imgui();
 };
 
 
