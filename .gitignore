@@ -1,0 +1,6 @@
+[Cc]make-*
+.idea
+.vs
+bindings
+out
+vendor
