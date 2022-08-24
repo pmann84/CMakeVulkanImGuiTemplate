@@ -11,7 +11,7 @@ public:
     // This function is run every frame
     void on_update() override
     {
-        logging::debug("Updating my app!");
+        //logging::debug("Updating my app!");
     }
 };
 

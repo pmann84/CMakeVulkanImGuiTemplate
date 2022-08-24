@@ -5,16 +5,37 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#include <optional>
 //#include <glm/vec4.hpp>
 
 // TODO: GL event handling
 // TODO: Window resize handling
+
+const std::vector<const char*> VULKAN_VALIDATION_LAYERS = {
+    "VK_LAYER_KHRONOS_validation"
+};
+
+#ifdef NDEBUG
+    const bool enable_validation_layers = false;
+#else
+    const bool enable_validation_layers = true;
+#endif
 
 struct application_data
 {
     std::string title = "Vulkan ImGui Template";
     uint32_t width = 640;
     uint32_t height = 480;
+};
+
+struct vk_queue_family_indices {
+    std::optional<uint32_t> graphics_family;
+
+    bool is_complete()
+    {
+        return graphics_family.has_value();
+    }
 };
 
 class application
@@ -38,12 +59,20 @@ protected:
     application_data m_props;
     GLFWwindow* m_window;
     VkInstance m_vulkan_instance;
+    VkDebugUtilsMessengerEXT m_vulkan_debug_messenger;
+    VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
 
 private:
     void init_window();
     void init_vulkan();
     void init_imgui();
-    VkResult createVulkanInstance();
+    VkResult create_vulkan_instance();
+    void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info);
+    void setup_debug_messenger();
+    bool check_validation_layer_support();
+    std::vector<const char*> get_required_extensions();
+    void pick_physical_device();
+    vk_queue_family_indices find_queue_families(VkPhysicalDevice device);
 
     void shutdown_window();
     void shutdown_vulkan();
