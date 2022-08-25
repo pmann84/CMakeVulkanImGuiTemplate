@@ -16,6 +16,10 @@ const std::vector<const char*> VULKAN_VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"
 };
 
+const std::vector<const char*> VULKAN_DEVICE_EXTENSIONS = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 // TODO: Change this to be a define and then just make all the sections use an #ifdef, 
 // then code is guaranteed not to leak into the release build
 #ifdef NDEBUG
@@ -31,7 +35,8 @@ struct application_data
     uint32_t height = 480;
 };
 
-struct vk_queue_family_indices {
+struct vk_queue_family_indices 
+{
     std::optional<uint32_t> graphics_family;
     std::optional<uint32_t> present_family;
 
@@ -40,6 +45,13 @@ struct vk_queue_family_indices {
         return graphics_family.has_value()
             && present_family.has_value();
     }
+};
+
+struct vk_swap_chain_support_details
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> present_modes;
 };
 
 class application
@@ -69,6 +81,10 @@ protected:
     VkQueue m_graphics_queue;
     VkSurfaceKHR m_surface;
     VkQueue m_present_queue;
+    VkSwapchainKHR m_swap_chain;
+    std::vector<VkImage> m_swap_chain_images;
+    VkFormat m_swap_chain_image_format;
+    VkExtent2D m_swap_chain_extent;
 
 private:
     void init_window();
@@ -81,8 +97,13 @@ private:
     std::vector<const char*> get_required_extensions();
     void pick_physical_device();
     vk_queue_family_indices find_queue_families(VkPhysicalDevice device);
+    vk_swap_chain_support_details query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
+    VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+    VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+    VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
     void create_logical_device();
     void create_surface();
+    void create_swap_chain();
 
     void shutdown_window();
     void shutdown_vulkan();
