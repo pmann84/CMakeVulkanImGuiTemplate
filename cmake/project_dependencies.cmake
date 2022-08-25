@@ -21,7 +21,7 @@ set(GLFW_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glfw/include)
 
 include(./cmake/imgui.cmake)
 
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_glfw.cpp ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_glfw.cpp COPYONLY)
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_glfw.h ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_glfw.h COPYONLY)
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_opengl3.cpp ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_opengl3.cpp COPYONLY)
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_opengl3.h ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_opengl3.h COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_glfw.cpp ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_glfw.cpp COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_glfw.h ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_glfw.h COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_vulkan.cpp ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_vulkan.cpp COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_vulkan.h ${CMAKE_CURRENT_SOURCE_DIR}/bindings/imgui_impl_vulkan.h COPYONLY)

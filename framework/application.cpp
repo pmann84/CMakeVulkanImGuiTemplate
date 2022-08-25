@@ -1,8 +1,9 @@
 #include "application.hpp"
+#include <set>
 
 //#include "imgui.h"
 //#include "imgui_impl_glfw.h"
-//#include "imgui_impl_opengl3.h"
+//#include "imgui_impl_vulkan.h"
 
 static void error_callback(int error, const char* description)
 {
@@ -32,7 +33,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     }
     else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
     {
-        logging::debug("Validation layer: {0}", callback_data->pMessage);
+        //logging::debug("Validation layer: {0}", callback_data->pMessage);
     }
     return VK_FALSE;
 }
@@ -76,22 +77,6 @@ application::application(application_data application_props) : m_props(applicati
     
     //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     //glfwSwapInterval(1);
-
-    // Setup Dear ImGui context
-    //IMGUI_CHECKVERSION();
-    //ImGui::CreateContext();
-    //ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-    // Setup Dear ImGui style
-    //ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
-    // Setup Platform/Renderer backends
-    //const char* glsl_version = "#version 130";
-    //ImGui_ImplGlfw_InitForOpenGL(m_window, true);
-    //ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 void application::run()
@@ -138,6 +123,11 @@ void application::init_window()
         // Window or context creation failed
         glfwTerminate();
         throw std::runtime_error("GLFW Window creation failed.");
+    }
+
+    if (!glfwVulkanSupported())
+    {
+        throw std::runtime_error("GLFW does not support Vulkan!");
     }
 
     glfwSetWindowUserPointer(m_window, this);
@@ -191,11 +181,26 @@ void application::init_vulkan()
 {
     create_vulkan_instance();
     setup_debug_messenger();
+    create_surface();
     pick_physical_device();
+    create_logical_device();
 }
 
 void application::init_imgui()
 {
+    // Setup Dear ImGui context
+    //IMGUI_CHECKVERSION();
+    //ImGui::CreateContext();
+    //ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    //ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
+    // Setup Platform/Renderer backends
+    //ImGui_ImplGlfw_InitForVulkan(m_window, true);
 }
 
 VkResult application::create_vulkan_instance()
@@ -371,6 +376,13 @@ vk_queue_family_indices application::find_queue_families(VkPhysicalDevice device
             indices.graphics_family = i;
         }
 
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &present_support);
+        if (present_support)
+        {
+            indices.present_family = i;
+        }
+
         if (indices.is_complete())
         {
             break;
@@ -381,6 +393,61 @@ vk_queue_family_indices application::find_queue_families(VkPhysicalDevice device
     return indices;
 }
 
+void application::create_logical_device()
+{
+    vk_queue_family_indices indices = find_queue_families(m_physical_device);
+
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    std::set<uint32_t> unique_queue_families = { 
+        indices.graphics_family.value(), 
+        indices.present_family.value() 
+    };
+    float queue_priority = 1.0f;
+
+    for (uint32_t queue_family : unique_queue_families)
+    {
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = queue_family;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queue_priority;
+        queue_create_infos.push_back(queue_create_info);
+    }
+
+    VkPhysicalDeviceFeatures device_features{};
+
+    VkDeviceCreateInfo device_create_info{};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pQueueCreateInfos = queue_create_infos.data();
+    device_create_info.queueCreateInfoCount = queue_create_infos.size();
+    device_create_info.pEnabledFeatures = &device_features;
+
+    device_create_info.enabledExtensionCount = 0;
+    device_create_info.enabledLayerCount = 0;
+
+    if (enable_validation_layers) 
+    {
+        device_create_info.enabledLayerCount = VULKAN_VALIDATION_LAYERS.size();
+        device_create_info.ppEnabledLayerNames = VULKAN_VALIDATION_LAYERS.data();
+    }
+
+    if (vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_logical_device))
+    {
+        throw std::runtime_error("Failed to create logical device!");
+    }
+
+    vkGetDeviceQueue(m_logical_device, indices.graphics_family.value(), 0, &m_graphics_queue);
+    vkGetDeviceQueue(m_logical_device, indices.present_family.value(), 0, &m_present_queue);
+}
+
+void application::create_surface()
+{
+    if (glfwCreateWindowSurface(m_vulkan_instance, m_window, nullptr, &m_surface))
+    {
+        throw std::runtime_error("Failed to create window surface.");
+    }
+}
+
 void application::shutdown_window()
 {
     glfwDestroyWindow(m_window);
@@ -389,17 +456,20 @@ void application::shutdown_window()
 
 void application::shutdown_vulkan()
 {
+    vkDestroyDevice(m_logical_device, nullptr);
+
     if (enable_validation_layers) 
     {
         destroy_debug_utils_messenger_ext(m_vulkan_instance, m_vulkan_debug_messenger, nullptr);
     }
 
+    vkDestroySurfaceKHR(m_vulkan_instance, m_surface, nullptr);
     vkDestroyInstance(m_vulkan_instance, nullptr);
 }
 
 void application::shutdown_imgui()
 {
-    ////ImGui_ImplOpenGL3_Shutdown();
+    ////ImGui_ImplVulkan_Shutdown();
     ////ImGui_ImplGlfw_Shutdown();
     ////ImGui::DestroyContext();
 }

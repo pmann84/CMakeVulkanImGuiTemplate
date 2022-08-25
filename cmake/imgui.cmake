@@ -15,6 +15,3 @@ add_library(imgui
 )
 
 set(IMGUI_INCLUDE_DIRS ${imgui_PATH})
-#target_include_directories(glad
-#        PUBLIC ${imgui_PATH}
-#        PUBLIC ${imgui_PATH}/backends/)

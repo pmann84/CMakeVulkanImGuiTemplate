@@ -16,6 +16,8 @@ const std::vector<const char*> VULKAN_VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"
 };
 
+// TODO: Change this to be a define and then just make all the sections use an #ifdef, 
+// then code is guaranteed not to leak into the release build
 #ifdef NDEBUG
     const bool enable_validation_layers = false;
 #else
@@ -31,10 +33,12 @@ struct application_data
 
 struct vk_queue_family_indices {
     std::optional<uint32_t> graphics_family;
+    std::optional<uint32_t> present_family;
 
     bool is_complete()
     {
-        return graphics_family.has_value();
+        return graphics_family.has_value()
+            && present_family.has_value();
     }
 };
 
@@ -61,6 +65,10 @@ protected:
     VkInstance m_vulkan_instance;
     VkDebugUtilsMessengerEXT m_vulkan_debug_messenger;
     VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
+    VkDevice m_logical_device;
+    VkQueue m_graphics_queue;
+    VkSurfaceKHR m_surface;
+    VkQueue m_present_queue;
 
 private:
     void init_window();
@@ -73,6 +81,8 @@ private:
     std::vector<const char*> get_required_extensions();
     void pick_physical_device();
     vk_queue_family_indices find_queue_families(VkPhysicalDevice device);
+    void create_logical_device();
+    void create_surface();
 
     void shutdown_window();
     void shutdown_vulkan();
