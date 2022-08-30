@@ -5,12 +5,14 @@ add_library(${FRAMEWORK_PROJECT_NAME})
 
 target_sources(${FRAMEWORK_PROJECT_NAME}
         PRIVATE application.cpp
+        shader_utils.cpp
         ../bindings/imgui_impl_glfw.cpp
         ../bindings/imgui_impl_vulkan.cpp
         PUBLIC application.hpp logging.hpp
+        shader_utils.hpp
         ../bindings/imgui_impl_glfw.h
         ../bindings/imgui_impl_vulkan.h
-)
+ "shader_utils.cpp")
 
 target_link_libraries(${FRAMEWORK_PROJECT_NAME}
         PUBLIC spdlog::spdlog

@@ -83,6 +83,7 @@ protected:
     VkQueue m_present_queue;
     VkSwapchainKHR m_swap_chain;
     std::vector<VkImage> m_swap_chain_images;
+    std::vector<VkImageView> m_swap_chain_image_views;
     VkFormat m_swap_chain_image_format;
     VkExtent2D m_swap_chain_extent;
 
@@ -104,6 +105,8 @@ private:
     void create_logical_device();
     void create_surface();
     void create_swap_chain();
+    void create_image_views();
+    void create_graphics_pipeline();
 
     void shutdown_window();
     void shutdown_vulkan();

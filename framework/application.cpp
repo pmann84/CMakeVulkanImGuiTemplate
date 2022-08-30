@@ -1,4 +1,6 @@
 #include "application.hpp"
+#include "shader_utils.hpp"
+
 #include <set>
 #include <algorithm>
 
@@ -186,6 +188,7 @@ void application::init_vulkan()
     pick_physical_device();
     create_logical_device();
     create_swap_chain();
+    create_graphics_pipeline();
 }
 
 void application::init_imgui()
@@ -605,6 +608,63 @@ void application::create_swap_chain()
     m_swap_chain_extent = extent;
 }
 
+void application::create_image_views()
+{
+    m_swap_chain_image_views.resize(m_swap_chain_images.size());
+    for (size_t i = 0; i < m_swap_chain_images.size(); i++) {
+        VkImageViewCreateInfo create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        create_info.image = m_swap_chain_images[i];
+        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        create_info.format = m_swap_chain_image_format;
+        create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        create_info.subresourceRange.baseMipLevel = 0;
+        create_info.subresourceRange.levelCount = 1;
+        create_info.subresourceRange.baseArrayLayer = 0;
+        create_info.subresourceRange.layerCount = 1;
+        if (vkCreateImageView(
+            m_logical_device, 
+            &create_info, 
+            nullptr, &m_swap_chain_image_views[i]) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("Failed to create image views!");
+        }
+    }
+}
+
+void application::create_graphics_pipeline()
+{
+    auto vertex_shader_code = shaders::read_shader("../shaders/shader.vert.spv");
+    logging::debug("Read in vertex shader of size {0} bytes.", vertex_shader_code.size());
+    auto fragment_shader_code = shaders::read_shader("../shaders/shader.frag.spv");
+    logging::debug("Read in fragment shader of size {0} bytes.", fragment_shader_code.size());
+
+    VkShaderModule vertex_shader_module = shaders::create_module(vertex_shader_code, m_logical_device);
+    VkShaderModule fragment_shader_module = shaders::create_module(fragment_shader_code, m_logical_device);
+
+    VkPipelineShaderStageCreateInfo vertex_shader_stage_info{};
+    vertex_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertex_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertex_shader_stage_info.module = vertex_shader_module;
+    vertex_shader_stage_info.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragment_shader_stage_info{};
+    fragment_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragment_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragment_shader_stage_info.module = fragment_shader_module;
+    fragment_shader_stage_info.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shader_stages[] = { vertex_shader_stage_info, fragment_shader_stage_info };
+
+
+    vkDestroyShaderModule(m_logical_device, fragment_shader_module, nullptr);
+    vkDestroyShaderModule(m_logical_device, vertex_shader_module, nullptr);
+}
+
 void application::shutdown_window()
 {
     glfwDestroyWindow(m_window);
@@ -613,6 +673,10 @@ void application::shutdown_window()
 
 void application::shutdown_vulkan()
 {
+    for (auto image_view : m_swap_chain_image_views) {
+        vkDestroyImageView(m_logical_device, image_view, nullptr);
+    }
+
     vkDestroySwapchainKHR(m_logical_device, m_swap_chain, nullptr);
     vkDestroyDevice(m_logical_device, nullptr);
 
