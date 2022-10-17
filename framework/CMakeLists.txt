@@ -14,7 +14,7 @@ target_sources(${FRAMEWORK_PROJECT_NAME}
         ../bindings/imgui_impl_vulkan.cpp
         PUBLIC application.hpp logging.hpp
         timer.hpp image.hpp
-        shader_utils.hpp
+        shader_utils.hpp vulkan_utils.hpp
         ../bindings/imgui_impl_glfw.h
         ../bindings/imgui_impl_vulkan.h)
 

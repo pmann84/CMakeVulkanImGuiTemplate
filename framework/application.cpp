@@ -1,5 +1,6 @@
 #include "application.hpp"
 
+#include "vulkan_utils.hpp"
 #include "logging.hpp"
 
 // Dear ImGui: standalone example application for Glfw + Vulkan
@@ -43,20 +44,6 @@ static bool                     g_SwapChainRebuild = false;
 // Per-frame-in-flight
 static std::vector<std::vector<VkCommandBuffer>> g_AllocatedCommandBuffers;
 static std::vector<std::vector<std::function<void()>>> g_ResourceFreeQueue;
-
-static void check_vk_result(VkResult err)
-{
-    if (err == 0)
-    {
-        return;
-    }
-
-    logging::error("Vulkan Error: VkResult = %d", err);
-    if (err < 0)
-    {
-        abort();
-    }
-}
 
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(
@@ -110,14 +97,14 @@ static void setup_vulkan(const char** extensions, uint32_t extensions_count)
 
         // Get the function pointer (required for any extensions)
         auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(g_Instance, "vkCreateDebugReportCallbackEXT");
-        IM_ASSERT(vkCreateDebugReportCallbackEXT != NULL);
+        IM_ASSERT(vkCreateDebugReportCallbackEXT != nullptr);
 
         // Setup the debug report callback
         VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
         debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
         debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
         debug_report_ci.pfnCallback = debug_report;
-        debug_report_ci.pUserData = NULL;
+        debug_report_ci.pUserData = nullptr;
         err = vkCreateDebugReportCallbackEXT(g_Instance, &debug_report_ci, g_Allocator, &g_DebugReport);
         check_vk_result(err);
 #else
@@ -131,11 +118,11 @@ static void setup_vulkan(const char** extensions, uint32_t extensions_count)
     // Select GPU
     {
         uint32_t gpu_count;
-        err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, NULL);
+        err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, nullptr);
         check_vk_result(err);
         IM_ASSERT(gpu_count > 0);
 
-        VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
+        auto* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
         err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, gpus);
         check_vk_result(err);
 
@@ -161,8 +148,8 @@ static void setup_vulkan(const char** extensions, uint32_t extensions_count)
     // Select graphics queue family
     {
         uint32_t count;
-        vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, NULL);
-        VkQueueFamilyProperties* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * count);
+        vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, nullptr);
+        auto* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * count);
         vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, queues);
         for (uint32_t i = 0; i < count; i++)
             if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -379,9 +366,9 @@ application::application(application_data application_props) : m_props(applicati
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     m_window = glfwCreateWindow(
-            m_props.width, m_props.height,
+            (int)m_props.width, (int)m_props.height,
             m_props.title.c_str(),
-            NULL, NULL);
+            nullptr, nullptr);
 
     // Setup Vulkan
     if (!glfwVulkanSupported())
@@ -577,7 +564,6 @@ void application::run()
             ImGui::PopStyleVar(2);
 
             // Submit the DockSpace
-            ImGuiIO& io = ImGui::GetIO();
             if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
             {
                 ImGuiID dockspace_id = ImGui::GetID("VulkanAppDockspace");
@@ -626,7 +612,7 @@ void application::run()
             frame_present(wd);
         }
 
-        float time = (float)glfwGetTime();
+        auto time = (float)glfwGetTime();
         m_frame_time = time - m_last_frame_time;
         m_time_step = glm::min<float>(m_frame_time, 0.0333f);
         m_last_frame_time = time;
