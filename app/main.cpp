@@ -9,9 +9,14 @@ public:
     }
 
     // This function is run every frame
-    void on_update() override
+    void on_update(float ts) override
     {
-        //logging::debug("Updating my app!");
+        logging::debug("Updating my app: timestep = {0}", ts);
+    }
+
+    void on_ui_update() override
+    {
+        logging::debug("Updating ui");
     }
 };
 

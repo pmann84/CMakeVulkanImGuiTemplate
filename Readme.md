@@ -18,6 +18,10 @@ git clone https://github.com/pmann84/CMakeVulkanImGuiTemplate.git
 cd CMakeVulkanImGuiTemplate
 git submodule update --init --recursive
 ```
+# Updating if the submodules have changes
+```
+git submodule update --remote
+```
 # Configure and Build
 First do an out of source build by configuring the build scripts
 ```
